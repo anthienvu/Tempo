@@ -10,6 +10,7 @@ Flask-Compress==1.4.0
 Flask-Cors==2.1.2
 imutils==0.5.3
 matplotlib==1.5.3
+numpy==1.18.0
 opencv-python==4.2.0.32
 pandas==0.24.2
 pandas-datareader==0.8.1
