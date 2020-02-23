@@ -12,26 +12,20 @@ In some cases, serializing this data and JSON can also be expensive.
 '''
 
 
-import flask
 import dash
 import dash_daq as daq
 import dash_html_components as html
 import dash_core_components as dcc
 from dash.dependencies import Input, Output, State
 import dash_table as dt
-
 import tempo
 import pandas as pd
 import json
-import os
-from random import randint
+
 
 external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
 
-server = flask.Flask(__name__)
-server.secret_key = os.environ.get('secret_key', str(randint(0, 1000000)))
-app = dash.Dash(__name__, external_stylesheets=external_stylesheets, server=server)
-
+app = dash.Dash(__name__, external_stylesheets = external_stylesheets)
 app.layout = html.Div([
                  html.H1(children = 'Tempo Demo'),
                  html.Div(dcc.Input(id = 'input_name', type = 'text')),
@@ -174,5 +168,5 @@ def update_image_src(children, value):
         
         
 if __name__ == '__main__':
-    app.run_server(thread = True)
-#    app.run_server(host = '127.0.0.1', port = '5000',debug = True)
+    app.run_server(debug=True)
+#    app.run_server(host = '127.0.0.1', port = '5000',debug=True)
