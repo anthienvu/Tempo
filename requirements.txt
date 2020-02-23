@@ -1,9 +1,11 @@
 dash
 dash-daq
-dlib
 face-recognition-models
 Flask
 gunicorn
+libsm6
+libxext6
+libxrender-dev
 numpy
 opencv-python
 pandas
