@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 '''
-Created on Thu Feb 20 20:44:06 2020
+Created on Thu Feb 24 20:44:06 2020
 
 @author: trungminh
 
@@ -128,7 +128,7 @@ def update_dropdown(children):
     
     if len(report_dict) > 0:
         time_report_df = pd.read_json(report_dict['time_report_df'], orient = 'split')
-        if time_report_df.loc[0,'Free Time'] != '0:00:00':
+        if time_report_df.loc[0,'Free Time'] > 0:
             detail_report_df = pd.read_json(report_dict['detail_report_df'], orient = 'split')
             options = [{'label': i, 'value': i} for i in detail_report_df['Time']]
             value = detail_report_df['Time'].values[0]

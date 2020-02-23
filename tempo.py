@@ -8,20 +8,21 @@ Created on Thu Feb 20 21:39:05 2020
 
 
 import face_recognition
-import cv2
-from PIL import Image
-import matplotlib.patches as patches
-from IPython.display import clear_output
-from matplotlib.pyplot import imshow
-import matplotlib.pylab as plt
-import pandas as pd
-import numpy as np
-from datetime import datetime
-import time
-
 from skimage.measure import compare_ssim
 import pyscreenshot as ImageGrab
-import imutils
+from PIL import Image
+import cv2
+import base64
+from io import BytesIO
+
+import pandas as pd
+import numpy as np
+from datetime import datetime, timedelta
+import time
+
+#from matplotlib.pyplot import imshow
+#import matplotlib.pylab as plt
+#import imutils
 
 
 def img_resize(image, width=None, height=None, inter=cv2.INTER_AREA):
@@ -108,12 +109,21 @@ def face_diff(imageA, imageB):
     print("SSIM Face: {}".format(score))
     return score
 
-def check_workingtime():
+def encode_b64(image_pil):        
+    if image_pil.mode != 'RGB':
+        image_pil = image_pil.convert('RGB')
+    buff = BytesIO()
+    image_pil.save(buff, format='png')
+    image_b64 = base64.b64encode(buff.getvalue()).decode("utf-8")
+
+    return image_b64
+    
+def check_workingtime(totaltime, timestep):
     eye_cascade = cv2.CascadeClassifier('haarcascade_eye.xml')
     detail_report = pd.DataFrame(columns = ['Time', 'Note', 'Image_Before', 'Image_After'])
     workingtime = 0
     freetime = 0
-    timestep = 60
+
     # X1,Y1,X2,Y2
     X1 = 600
     Y1 = 300
@@ -128,8 +138,10 @@ def check_workingtime():
     # plt.subplot(121), plt.imshow(screen_before2)
     # plt.show()
     
+    video_capture.release()
     time.sleep(timestep)
     
+    video_capture = cv2.VideoCapture(0)
     ret, frame_before1 = video_capture.read()
     screen_before1 = ImageGrab.grab(bbox=(X1,Y1,X2,Y2))
     # print(datetime.fromtimestamp(time.time()).strftime("%A, %B %d, %Y %I:%M:%S"))
@@ -137,12 +149,13 @@ def check_workingtime():
     # plt.subplot(121), plt.imshow(screen_before1)
     # plt.show()
     
+    video_capture.release()
     time.sleep(timestep)
     
     t_start = time.time()
     while True:
         # Stop
-        if (time.time() - 3600) > t_start:
+        if (time.time() - totaltime) > t_start: #test in 10s
             video_capture.release()
             break
         t = time.time()    
@@ -166,8 +179,10 @@ def check_workingtime():
             if len(eyes) == 0:
                 df_temp = pd.DataFrame(columns = ['Time', 'Note', 'Image_Before', 'Image_After'])
                 df_temp['Time'] = [time_check]
-                df_temp['Note'] = ['Can not detect face']      
-                df_temp['Image_After'] = [frame]
+                df_temp['Note'] = ['Can not detect face.']
+                frame_b64 = encode_b64(Image.fromarray(frame))
+                df_temp['Image_Before'] = [frame_b64]      
+                df_temp['Image_After'] = [frame_b64]
                 detail_report = pd.concat([detail_report, df_temp])
     
                 freetime += timestep + time.time() - t
@@ -184,18 +199,20 @@ def check_workingtime():
                 freetime += timestep + time.time() - t
                 df_temp = pd.DataFrame(columns = ['Time', 'Note', 'Image_Before', 'Image_After'])
                 df_temp['Time'] = [time_check]
-                df_temp['Note'] = ['Screen no change']
-                df_temp['Image_Before'] = [screen_before2]
-                df_temp['Image_After'] = [screen]
+                df_temp['Note'] = ['Screen no change.']
+                df_temp['Image_Before'] = [encode_b64(screen_before2)]
+                df_temp['Image_After'] = [encode_b64(screen)]
                 detail_report = pd.concat([detail_report, df_temp])
                 
             elif (face_diff(frame_before1, frame) > 0.8) and (face_diff(frame_before2, frame) > 0.8):
                 freetime += timestep + time.time() - t
                 df_temp = pd.DataFrame(columns = ['Time', 'Note', 'Image_Before', 'Image_After'])
                 df_temp['Time'] = [time_check]
-                df_temp['Note'] = ['Webcam no change']
-                df_temp['Image_Before'] = [frame_before2]
-                df_temp['Image_After'] = [frame]
+                df_temp['Note'] = ['Webcam no change.']
+                frame_before2_b64 = encode_b64(Image.fromarray(frame_before2))
+                frame_b64 = encode_b64(Image.fromarray(frame))
+                df_temp['Image_Before'] = [frame_before2_b64]
+                df_temp['Image_After'] = [frame_b64]
                 detail_report = pd.concat([detail_report, df_temp])
         
             else:
@@ -212,8 +229,8 @@ def check_workingtime():
     detail_report = detail_report.reset_index(drop=True)
     
     time_report = pd.DataFrame()
-    time_report['Working Time'] = [workingtime]
-    time_report['Free Time'] = [freetime]
+    time_report['Working Time'] = [str(timedelta(seconds=round(workingtime)))]
+    time_report['Free Time'] = [str(timedelta(seconds=round(freetime)))]
 
     return time_report, detail_report
     
